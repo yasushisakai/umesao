@@ -40,6 +40,17 @@ func InitDB() (*pgxpool.Pool, *database.Queries, error) {
 	return dbpool, queries, nil
 }
 
+// ParseCardIDString parses a string to extract a card ID
+func ParseCardIDString(cardIDStr string) (int, error) {
+	// Parse card ID from string
+	cardID, err := strconv.Atoi(cardIDStr)
+	if err != nil {
+		return 0, fmt.Errorf("error parsing card ID: %v", err)
+	}
+	
+	return cardID, nil
+}
+
 // ParseCardID parses command-line arguments to extract a card ID, prompting the user if needed
 func ParseCardID(args []string) (int, error) {
 	var cardIDStr string
@@ -65,13 +76,7 @@ func ParseCardID(args []string) (int, error) {
 		return 0, fmt.Errorf("invalid number of arguments")
 	}
 
-	// Parse card ID from string
-	cardID, err := strconv.Atoi(cardIDStr)
-	if err != nil {
-		return 0, fmt.Errorf("error parsing card ID: %v", err)
-	}
-
-	return cardID, nil
+	return ParseCardIDString(cardIDStr)
 }
 
 // CalculateFileHash calculates SHA-256 hash of content and returns hex string
