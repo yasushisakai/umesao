@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/pgvector/pgvector-go"
 	"github.com/yasushisakai/umesao/database"
@@ -26,7 +25,6 @@ type SearchResult struct {
 }
 
 func main() {
-
 	// Check if a search query was provided
 	if len(os.Args) != 2 {
 		fmt.Println("Usage: lookup <search_query>")
@@ -43,53 +41,30 @@ func main() {
 	fmt.Printf("Searching for: \"%s\"\n", searchQuery)
 
 	// Get environment variables for OpenAI API
-	openaiKey := os.Getenv("OPENAI_KEY")
-	if openaiKey == "" {
-		fmt.Println("OPENAI_KEY is not set")
-		os.Exit(1)
-	}
+	openaiKey, err := common.RequireEnvVar("OPENAI_KEY")
+	common.CheckError(err, "Error getting OpenAI API key")
 
 	// Calculate embedding for the search query
 	queryEmbeddings, err := common.LineEmbeddings(openaiKey, "text-embedding-3-small", 1536, []string{searchQuery})
-	if err != nil {
-		fmt.Printf("Error generating query embedding: %v\n", err)
-		os.Exit(1)
-	}
+	common.CheckError(err, "Error generating query embedding")
 
 	if len(queryEmbeddings) == 0 {
 		fmt.Println("No embeddings generated for the query")
 		os.Exit(1)
 	}
 
-	// Convert the query embedding from []float64 to []float32
-	queryEmbedding := make([]float32, len(queryEmbeddings[0]))
-	for i, val := range queryEmbeddings[0] {
-		queryEmbedding[i] = float32(val)
-	}
-
-	pgvQueryEmbed := pgvector.NewVector(queryEmbedding)
+	// Convert the query embedding from []float64 to []float32 and create pgvector
+	pgvQueryEmbed := pgvector.NewVector(common.ConvertFloat64ToFloat32(queryEmbeddings[0]))
 
 	// Initialize database connection
-	dbString := os.Getenv("DB_STRING")
-	if dbString == "" {
-		fmt.Println("DB_STRING environment variable is not set")
-		os.Exit(1)
-	}
-
-	dbpool, err := pgxpool.New(context.Background(), dbString)
-	if err != nil {
-		fmt.Printf("Error connecting to database: %v\n", err)
-		os.Exit(1)
-	}
+	dbpool, queries, err := common.InitDB()
+	common.CheckError(err, "Error initializing database")
 	defer dbpool.Close()
 
 	// Check if we have any chunks in the database
 	var chunkCount int
 	err = dbpool.QueryRow(context.Background(), "SELECT COUNT(*) FROM chunks").Scan(&chunkCount)
-	if err != nil {
-		fmt.Printf("Error counting chunks: %v\n", err)
-		os.Exit(1)
-	}
+	common.CheckError(err, "Error counting chunks")
 
 	// If no chunks, exit early
 	if chunkCount == 0 {
@@ -97,18 +72,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Create database queries
-	queries := database.New(dbpool)
-
 	// Search for the closest embeddings using only the latest version of each card
 	searchResults, err := queries.SearchLatestDistance(context.Background(), database.SearchLatestDistanceParams{
 		Embedding: pgvQueryEmbed,
 		Limit:     10,
 	})
-	if err != nil {
-		fmt.Printf("Error searching for latest embeddings: %v\n", err)
-		os.Exit(1)
-	}
+	common.CheckError(err, "Error searching for latest embeddings")
 
 	if len(searchResults) == 0 {
 		fmt.Println("No matching results found")
@@ -161,7 +130,7 @@ func main() {
 			fmt.Printf("%4d\t%2d\t%5.3f\t\"%s\"\n", result.CardID, result.Ver, result.Distance, string([]rune(result.Text)[:10]))
 		}
 	}
-	
+
 	// Initialize Minio client if needed for image display
 	minioClient, err := common.NewMinioClient()
 	if err != nil {
@@ -177,19 +146,10 @@ func main() {
 				if err != nil {
 					fmt.Printf("Invalid card ID: %v\n", err)
 				} else {
-					// Fetch images for the selected card
-					images, err := queries.GetCardImages(context.Background(), int32(selectedID))
+					// Display the selected card's image
+					err = common.DisplayCardImages(int32(selectedID), queries)
 					if err != nil {
-						fmt.Printf("Error getting card images: %v\n", err)
-					} else if len(images) > 0 {
-						// Get the URL to the image and open it
-						imageURL := minioClient.GetImageURLForCard(images[0])
-						fmt.Printf("Opening image in browser: %s\n", imageURL)
-						if err := common.OpenBrowser(imageURL); err != nil {
-							fmt.Printf("Error opening image: %v\n", err)
-						}
-					} else {
-						fmt.Printf("No images found for card ID: %d\n", selectedID)
+						fmt.Printf("Note: %v (no image found or error displaying)\n", err)
 					}
 				}
 			}

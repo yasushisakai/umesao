@@ -70,7 +70,7 @@ FROM
         distance ASC
     LIMIT $2;
 
--- name: GetCardImages :one
+-- name: GetCardImage :one
 SELECT
     filename
 FROM
