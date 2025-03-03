@@ -47,7 +47,7 @@ func ParseCardIDString(cardIDStr string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("error parsing card ID: %v", err)
 	}
-	
+
 	return cardID, nil
 }
 
@@ -115,7 +115,7 @@ func CheckError(err error, message string) {
 // DisplayCardImages retrieves image for a card and displays it in browser
 func DisplayCardImages(cardID int32, queries database.Queries) error {
 	// Get the image associated with the card
-	image, err := queries.GetCardImage(context.Background(), cardID)
+	row, err := queries.GetCardImage(context.Background(), cardID)
 	if err != nil {
 		return fmt.Errorf("error getting card image: %v", err)
 	}
@@ -127,7 +127,7 @@ func DisplayCardImages(cardID int32, queries database.Queries) error {
 	}
 
 	// Get the URL to the image
-	imageURL := minioClient.GetImageURLForCard(image)
+	imageURL := minioClient.GetImageURLForCard(row.Filename)
 
 	// Open the image URL in the default browser
 	fmt.Printf("Opening image in browser: %s\n", imageURL)

@@ -8,6 +8,7 @@ CREATE TABLE images (
     card_id serial REFERENCES cards (id) ON DELETE CASCADE NOT NULL,
     filename text NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    method text NOT NULL,
     PRIMARY KEY (card_id, filename)
 );
 

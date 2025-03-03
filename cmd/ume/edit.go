@@ -44,11 +44,11 @@ func editImpl(cardID int, verbose bool) error {
 	// Download the markdown file using the common function
 	err = minioClient.GetMarkdownForCard(int32(cardID), latestVersion, tempFile)
 	if err != nil {
-		return fmt.Errorf("error downloading markdown file: %v", err)
+		return fmt.Errorf("error downloading content file: %v", err)
 	}
 
 	if verbose {
-		fmt.Printf("Successfully downloaded markdown file to %s\n", tempFile)
+		fmt.Printf("Successfully downloaded content file to %s\n", tempFile)
 	}
 
 	// Read the markdown file content
@@ -88,7 +88,7 @@ func editImpl(cardID int, verbose bool) error {
 	}
 
 	if verbose {
-		fmt.Println("Changes detected. Updating markdown version in Minio and database.")
+		fmt.Println("Changes detected. Updating content version in Minio and database.")
 	}
 
 	// Increment version number
@@ -97,11 +97,11 @@ func editImpl(cardID int, verbose bool) error {
 	// Upload the edited markdown file using the common function
 	err = minioClient.UploadMarkdownForCard(int32(cardID), newVersion, editedContent)
 	if err != nil {
-		return fmt.Errorf("error uploading edited markdown file: %v", err)
+		return fmt.Errorf("error uploading edited content file: %v", err)
 	}
 
 	if verbose {
-		fmt.Printf("Successfully uploaded edited markdown for card %d, version %d\n", cardID, newVersion)
+		fmt.Printf("Successfully uploaded edited content for card %d, version %d\n", cardID, newVersion)
 	}
 
 	// Store the new markdown hash in the database
@@ -124,11 +124,17 @@ func editImpl(cardID int, verbose bool) error {
 		return fmt.Errorf("error getting OpenAI API key: %v", err)
 	}
 
-	// Extract chunks from the edited markdown
+	// Get the method used for this card (ocr or vision)
+	imageInfo, err := queries.GetCardImage(context.Background(), int32(cardID))
+	if err != nil {
+		return fmt.Errorf("error retrieving card image method: %v", err)
+	}
+
+	// Extract chunks from the edited markdown using the same method that was used for upload
 	mdString := string(editedContent)
-	chunks := common.ExtractChunks(mdString)
+	chunks := common.ExtractChunks(mdString, imageInfo.Method)
 	if verbose {
-		fmt.Printf("Extracted %d chunks from markdown\n", len(chunks))
+		fmt.Printf("Extracted %d chunks from markdown using %s method\n", len(chunks), imageInfo.Method)
 	}
 
 	// Generate embeddings for chunks

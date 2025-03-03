@@ -9,8 +9,8 @@ DELETE FROM cards
 WHERE id = $1;
 
 -- name: CreateImage :exec
-INSERT INTO images (card_id, filename)
-    VALUES ($1, $2);
+INSERT INTO images (card_id, filename, method)
+    VALUES ($1, $2, $3);
 
 -- name: CreateMarkdown :exec
 INSERT INTO markdown_files (card_id, ver, hash)
@@ -72,7 +72,8 @@ FROM
 
 -- name: GetCardImage :one
 SELECT
-    filename
+    filename,
+    method
 FROM
     images
 WHERE

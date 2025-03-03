@@ -30,7 +30,7 @@ func main() {
 		},
 		{
 			Name:        "upload",
-			Description: "Upload an image file, perform OCR, and store the results",
+			Description: "Upload an image file, extract text, and store the results",
 			Func:        uploadCmd,
 		},
 		{
@@ -76,12 +76,15 @@ func main() {
 			fmt.Println("4. Offer to display an image for a selected card")
 			return
 		case "upload":
-			fmt.Println("Usage: ume upload <image_file>")
-			fmt.Println("\nUpload an image file, perform OCR, and store the results in the database.")
+			fmt.Println("Usage: ume upload [--method=ocr|vision] <image_file>")
+			fmt.Println("\nUpload an image file, extract text, and store the results in the database.")
+			fmt.Println("\nOptions:")
+			fmt.Println("  --method=ocr     Use Azure OCR service (default)")
+			fmt.Println("  --method=vision  Use OpenAI's Vision API")
 			fmt.Println("\nThis command will:")
 			fmt.Println("1. Upload the image to storage")
-			fmt.Println("2. Run OCR on the image to extract text")
-			fmt.Println("3. Convert the OCR result to markdown")
+			fmt.Println("2. Extract text using the specified method (OCR or Vision)")
+			fmt.Println("3. Convert the result to markdown")
 			fmt.Println("4. Generate embeddings for the markdown content")
 			fmt.Println("5. Store everything in the database")
 			return
@@ -147,7 +150,7 @@ func helpCmd(args []string) error {
 		},
 		{
 			Name:        "upload",
-			Description: "Upload an image file, perform OCR, and store the results",
+			Description: "Upload an image file, extract text, and store the results",
 			Func:        uploadCmd,
 		},
 		{
@@ -179,12 +182,15 @@ func helpCmd(args []string) error {
 					fmt.Println("3. Display the top matching cards")
 					fmt.Println("4. Offer to display an image for a selected card")
 				case "upload":
-					fmt.Println("Usage: ume upload <image_file>")
-					fmt.Println("\nUpload an image file, perform OCR, and store the results in the database.")
+					fmt.Println("Usage: ume upload [--method=ocr|vision] <image_file>")
+					fmt.Println("\nUpload an image file, extract text, and store the results in the database.")
+					fmt.Println("\nOptions:")
+					fmt.Println("  --method=ocr     Use Azure OCR service (default)")
+					fmt.Println("  --method=vision  Use OpenAI's Vision API")
 					fmt.Println("\nThis command will:")
 					fmt.Println("1. Upload the image to storage")
-					fmt.Println("2. Run OCR on the image to extract text")
-					fmt.Println("3. Convert the OCR result to markdown")
+					fmt.Println("2. Extract text using the specified method (OCR or Vision)")
+					fmt.Println("3. Convert the result to markdown")
 					fmt.Println("4. Generate embeddings for the markdown content")
 					fmt.Println("5. Store everything in the database")
 				case "edit":
@@ -251,12 +257,12 @@ func lookupCmd(args []string) error {
 // uploadCmd handles the upload command
 func uploadCmd(args []string) error {
 	if len(args) < 2 {
-		return fmt.Errorf("usage: ume upload <image_file>")
+		return fmt.Errorf("usage: ume upload [--method=ocr|vision] <image_file>")
 	}
 
-	// Specify upload flags (if any)
+	// Specify upload flags
 	uploadFlags := flag.NewFlagSet("upload", flag.ExitOnError)
-	// No flags for now, but structure is here for future use
+	methodFlag := uploadFlags.String("method", "ocr", "Method to use for text extraction: ocr (default) or vision")
 
 	// Parse flags (skipping the first argument which is the command name)
 	uploadFlags.Parse(args[1:])
@@ -278,8 +284,14 @@ func uploadCmd(args []string) error {
 		return fmt.Errorf("error getting absolute path: %v", err)
 	}
 
-	// Implement the upload functionality (from cmd/upload/main.go)
-	return uploadImpl(absPath)
+	// Validate method flag
+	method := *methodFlag
+	if method != "ocr" && method != "vision" {
+		return fmt.Errorf("invalid method: %s. Must be either 'ocr' or 'vision'", method)
+	}
+
+	// Implement the upload functionality with the specified method
+	return uploadImpl(absPath, method)
 }
 
 // editCmd handles the edit command

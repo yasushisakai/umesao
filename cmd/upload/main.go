@@ -70,14 +70,14 @@ func main() {
 		fmt.Printf("Error initializing Minio client: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	// Upload the image file for the card
 	fileName, err := minioClient.UploadImageForCard(cardID, file)
 	if err != nil {
 		fmt.Printf("Error uploading image file: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Printf("Successfully uploaded image %s\n", fileName)
 
 	// Associate the image with the card in the database
@@ -152,7 +152,7 @@ func main() {
 	fmt.Println("Successfully converted OCR result to markdown")
 
 	// 5. Extract chunks from markdown
-	chunks := common.ExtractChunks(md)
+	chunks := common.ExtractChunks(md, "ocr")
 	fmt.Printf("Extracted %d chunks from markdown\n", len(chunks))
 
 	// 6. Generate embeddings for chunks
@@ -170,14 +170,14 @@ func main() {
 
 	// 8. Set the markdown version for new cards
 	markdownVersion := 1
-	
+
 	// 9. Upload the markdown file using the common function
 	err = minioClient.UploadMarkdownForCard(cardID, int32(markdownVersion), []byte(md))
 	if err != nil {
 		fmt.Printf("Error uploading markdown file: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Printf("Successfully uploaded markdown file for card %d, version %d\n", cardID, markdownVersion)
 
 	// 12. Store the markdown hash in the database
