@@ -17,6 +17,7 @@ require (
 	github.com/minio/crc64nvme v1.0.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v7 v7.0.87 // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/pgvector/pgvector-go v0.2.3 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
