@@ -39,6 +39,11 @@ func main() {
 			Func:        editCmd,
 		},
 		{
+			Name:        "delete",
+			Description: "Delete a card and all its associated data",
+			Func:        deleteCmd,
+		},
+		{
 			Name:        "help",
 			Description: "Show help information",
 			Func:        helpCmd,
@@ -98,6 +103,14 @@ func main() {
 			fmt.Println("2. Open it in the neovim editor for you to edit")
 			fmt.Println("3. If you make changes, upload the new version")
 			fmt.Println("4. Generate new embeddings for the updated content")
+			return
+		case "delete":
+			fmt.Println("Usage: ume delete <card_id>")
+			fmt.Println("\nDelete a card and all its associated data (images, markdown files, and embeddings).")
+			fmt.Println("\nThis command will:")
+			fmt.Println("1. Confirm you want to delete the card")
+			fmt.Println("2. Delete the card from the database")
+			fmt.Println("3. All related data is cascade deleted automatically")
 			return
 		}
 	} else if cmdOrQuery == "help" {
@@ -159,6 +172,11 @@ func helpCmd(args []string) error {
 			Func:        editCmd,
 		},
 		{
+			Name:        "delete",
+			Description: "Delete a card and all its associated data",
+			Func:        deleteCmd,
+		},
+		{
 			Name:        "help",
 			Description: "Show help information",
 			Func:        helpCmd,
@@ -203,6 +221,15 @@ func helpCmd(args []string) error {
 					fmt.Println("2. Open it in the neovim editor for you to edit")
 					fmt.Println("3. If you make changes, upload the new version")
 					fmt.Println("4. Generate new embeddings for the updated content")
+				case "delete":
+					fmt.Println("Usage: ume delete [options] <card_id>")
+					fmt.Println("\nDelete a card and all its associated data (images, markdown files, and embeddings).")
+					fmt.Println("\nOptions:")
+					fmt.Println("  -q, --quiet    Suppress confirmation and verbose output")
+					fmt.Println("\nThis command will:")
+					fmt.Println("1. Confirm you want to delete the card (unless --quiet is specified)")
+					fmt.Println("2. Delete object files from Minio storage (images and markdown)")
+					fmt.Println("3. Delete the card from the database (related data is cascade deleted)")
 				}
 				return nil
 			}
@@ -294,6 +321,39 @@ func uploadCmd(args []string) error {
 	return uploadImpl(absPath, method)
 }
 
+// deleteCmd handles the delete command
+func deleteCmd(args []string) error {
+	if len(args) < 2 {
+		return fmt.Errorf("usage: ume delete [options] <card_id>")
+	}
+
+	// No flags for delete command
+	deleteFlags := flag.NewFlagSet("delete", flag.ExitOnError)
+	quietFlag := deleteFlags.Bool("q", false, "Surpress verbose output")
+	quietLongFlag := deleteFlags.Bool("quiet", false, "Surpress verbose output")
+
+	// Parse flags (skipping the first argument which is the command name)
+	deleteFlags.Parse(args[1:])
+
+	// Get the card ID
+	cardIDStr := deleteFlags.Arg(0)
+	if cardIDStr == "" {
+		return fmt.Errorf("no card ID specified")
+	}
+
+	// Parse the card ID
+	cardID, err := common.ParseCardIDString(cardIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid card ID: %v", err)
+	}
+
+	// Check if either quiet flag is set
+	quiet := *quietFlag || *quietLongFlag
+
+	// Implement the delete functionality
+	return deleteImpl(cardID, quiet)
+}
+
 // editCmd handles the edit command
 func editCmd(args []string) error {
 	if len(args) < 2 {
@@ -331,3 +391,5 @@ func editCmd(args []string) error {
 // - lookup.go: lookupImpl
 // - upload.go: uploadImpl
 // - edit.go:   editImpl
+// - delete.go: deleteImpl
+
