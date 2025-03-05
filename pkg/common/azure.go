@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-func AzureOCRRequest(endpoint, key, path string) (string, error) {
+func AzureOCRRequest(endpoint, key, path, language string) (string, error) {
 	// Retrieve the Azure subscription key from the environment variable.
 
 	// Read the image file into memory.
@@ -20,8 +20,13 @@ func AzureOCRRequest(endpoint, key, path string) (string, error) {
 		log.Fatalf("Failed to read image file: %v", err)
 	}
 
+	// Set default language to Japanese if not specified
+	if language == "" {
+		language = "ja"
+	}
+
 	// Define the URL with the query parameter.
-	url := fmt.Sprintf("%s/vision/v3.2/read/analyze?language=ja", endpoint)
+	url := fmt.Sprintf("%s/vision/v3.2/read/analyze?language=%s", endpoint, language)
 	// Create a new POST request with the image data as the body.
 	req, err := http.NewRequest("POST", url, bytes.NewReader(fileData))
 	if err != nil {

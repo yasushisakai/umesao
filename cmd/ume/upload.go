@@ -59,7 +59,7 @@ type OpenAIResponse struct {
 }
 
 // uploadImpl implements the upload command functionality
-func uploadImpl(filePath string, method string) error {
+func uploadImpl(filePath string, method string, language string) error {
 	// Check if the file exists and is readable
 	_, err := os.Stat(filePath)
 	if err != nil {
@@ -117,7 +117,7 @@ func uploadImpl(filePath string, method string) error {
 	// Extract text from the image based on the method
 	var content string
 	if method == "ocr" {
-		content, err = processWithOCR(filePath, openaiKey)
+		content, err = processWithOCR(filePath, openaiKey, language)
 	} else {
 		content, err = processWithVision(filePath, openaiKey)
 	}
@@ -195,7 +195,7 @@ func uploadImpl(filePath string, method string) error {
 }
 
 // processWithOCR extracts text from an image using Azure OCR
-func processWithOCR(filePath string, openaiKey string) (string, error) {
+func processWithOCR(filePath string, openaiKey string, language string) (string, error) {
 	// Get environment variables
 	azureEndpoint, err := common.RequireEnvVar("AZURE_ENDPOINT")
 	if err != nil {
@@ -208,7 +208,7 @@ func processWithOCR(filePath string, openaiKey string) (string, error) {
 	}
 
 	// Send OCR request
-	location, err := common.AzureOCRRequest(azureEndpoint, azureKey, filePath)
+	location, err := common.AzureOCRRequest(azureEndpoint, azureKey, filePath, language)
 	if err != nil {
 		return "", fmt.Errorf("error sending OCR request: %v", err)
 	}

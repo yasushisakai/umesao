@@ -81,11 +81,14 @@ func main() {
 			fmt.Println("4. Offer to display an image for a selected card")
 			return
 		case "upload":
-			fmt.Println("Usage: ume upload [--method=ocr|vision] <image_file>")
+			fmt.Println("Usage: ume upload [--method=ocr|vision] [-l=language] <image_file>")
 			fmt.Println("\nUpload an image file, extract text, and store the results in the database.")
 			fmt.Println("\nOptions:")
 			fmt.Println("  --method=ocr     Use Azure OCR service (default)")
 			fmt.Println("  --method=vision  Use OpenAI's Vision API")
+			fmt.Println("  -l, --lang       Language for OCR recognition (default: ja)")
+			fmt.Println("                   Examples: en, de, fr, es, zh, ja")
+			fmt.Println("                   Full list: https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/language-support#optical-character-recognition-ocr")
 			fmt.Println("\nThis command will:")
 			fmt.Println("1. Upload the image to storage")
 			fmt.Println("2. Extract text using the specified method (OCR or Vision)")
@@ -202,11 +205,14 @@ func helpCmd(args []string) error {
 					fmt.Println("3. Display the top matching cards")
 					fmt.Println("4. Offer to display an image for a selected card")
 				case "upload":
-					fmt.Println("Usage: ume upload [--method=ocr|vision] <image_file>")
+					fmt.Println("Usage: ume upload [--method=ocr|vision] [-l=language] <image_file>")
 					fmt.Println("\nUpload an image file, extract text, and store the results in the database.")
 					fmt.Println("\nOptions:")
 					fmt.Println("  --method=ocr     Use Azure OCR service (default)")
 					fmt.Println("  --method=vision  Use OpenAI's Vision API")
+					fmt.Println("  -l, --lang       Language for OCR recognition (default: ja)")
+					fmt.Println("                   Examples: en, de, fr, es, zh, ja")
+					fmt.Println("                   Full list: https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/language-support#optical-character-recognition-ocr")
 					fmt.Println("\nThis command will:")
 					fmt.Println("1. Upload the image to storage")
 					fmt.Println("2. Extract text using the specified method (OCR or Vision)")
@@ -286,12 +292,14 @@ func lookupCmd(args []string) error {
 // uploadCmd handles the upload command
 func uploadCmd(args []string) error {
 	if len(args) < 2 {
-		return fmt.Errorf("usage: ume upload [--method=ocr|vision] <image_file>")
+		return fmt.Errorf("usage: ume upload [--method=ocr|vision] [-l=language] <image_file>")
 	}
 
 	// Specify upload flags
 	uploadFlags := flag.NewFlagSet("upload", flag.ExitOnError)
 	methodFlag := uploadFlags.String("method", "ocr", "Method to use for text extraction: ocr (default) or vision")
+	langShortFlag := uploadFlags.String("l", "ja", "Language for OCR (default: ja)")
+	langLongFlag := uploadFlags.String("lang", "ja", "Language for OCR (default: ja). See supported languages at https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/language-support#optical-character-recognition-ocr")
 
 	// Parse flags (skipping the first argument which is the command name)
 	uploadFlags.Parse(args[1:])
@@ -319,8 +327,14 @@ func uploadCmd(args []string) error {
 		return fmt.Errorf("invalid method: %s. Must be either 'ocr' or 'vision'", method)
 	}
 
-	// Implement the upload functionality with the specified method
-	return uploadImpl(absPath, method)
+	// Determine which language flag to use (prefer short flag if both are set to non-default)
+	language := *langShortFlag
+	if *langShortFlag == "ja" && *langLongFlag != "ja" {
+		language = *langLongFlag
+	}
+
+	// Implement the upload functionality with the specified method and language
+	return uploadImpl(absPath, method, language)
 }
 
 // deleteCmd handles the delete command
