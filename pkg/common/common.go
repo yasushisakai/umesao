@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pgvector/pgvector-go"
 	"github.com/yasushisakai/umesao/database"
+
+	_ "github.com/joho/godotenv/autoload"
 )
 
 // RequireEnvVar checks if an environment variable is set and returns its value or an error

@@ -19,6 +19,8 @@ import (
 	"github.com/pgvector/pgvector-go"
 	"github.com/yasushisakai/umesao/database"
 	"github.com/yasushisakai/umesao/pkg/common"
+
+	_ "github.com/joho/godotenv/autoload"
 )
 
 // OpenAIRequest represents a request to the OpenAI API for vision

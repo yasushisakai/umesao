@@ -105,12 +105,14 @@ func main() {
 			fmt.Println("4. Generate new embeddings for the updated content")
 			return
 		case "delete":
-			fmt.Println("Usage: ume delete <card_id>")
+			fmt.Println("Usage: ume delete [options] <card_id>")
 			fmt.Println("\nDelete a card and all its associated data (images, markdown files, and embeddings).")
+			fmt.Println("\nOptions:")
+			fmt.Println("  -q, --quiet    Suppress confirmation and verbose output")
 			fmt.Println("\nThis command will:")
-			fmt.Println("1. Confirm you want to delete the card")
-			fmt.Println("2. Delete the card from the database")
-			fmt.Println("3. All related data is cascade deleted automatically")
+			fmt.Println("1. Confirm you want to delete the card (unless --quiet is specified)")
+			fmt.Println("2. Delete object files from Minio storage (images and markdown)")
+			fmt.Println("3. Delete the card from the database (related data is cascade deleted)")
 			return
 		}
 	} else if cmdOrQuery == "help" {
@@ -392,4 +394,3 @@ func editCmd(args []string) error {
 // - upload.go: uploadImpl
 // - edit.go:   editImpl
 // - delete.go: deleteImpl
-
