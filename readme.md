@@ -5,24 +5,8 @@ Upload image (a 4'x6' card) with one idea or segment of thought
 ![](./sample.jpg)
 
 ```bash
-ume upload image.jpg
+ume help
 ```
-
-after you have some amount of cards.
-
-```bash
-ume "tokyo"
-```
-
-searches all the content that relates to the search query.
-
-
-```bash
-ume edit 2
-```
-
-You can edit the content. This will 1. show the image and 2. open neovim to edit.
-
 
 # required ENV vars
 
