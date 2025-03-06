@@ -207,8 +207,8 @@ func processWithOCR(filePath string, openaiKey string, language string) (string,
 		return "", fmt.Errorf("error getting Azure key: %v", err)
 	}
 
-	// Send OCR request
-	location, err := common.AzureOCRRequest(azureEndpoint, azureKey, filePath, language)
+	// Send OCR request to Azure with the specified language
+	location, err := common.AzureOCRRequestWithLanguage(azureEndpoint, azureKey, filePath, language)
 	if err != nil {
 		return "", fmt.Errorf("error sending OCR request: %v", err)
 	}

@@ -39,6 +39,11 @@ func main() {
 			Func:        editCmd,
 		},
 		{
+			Name:        "show",
+			Description: "Show a card's image and markdown content in the browser",
+			Func:        showCmd,
+		},
+		{
 			Name:        "delete",
 			Description: "Delete a card and all its associated data",
 			Func:        deleteCmd,
@@ -177,6 +182,11 @@ func helpCmd(args []string) error {
 			Func:        editCmd,
 		},
 		{
+			Name:        "show",
+			Description: "Show a card's image and markdown content in the browser",
+			Func:        showCmd,
+		},
+		{
 			Name:        "delete",
 			Description: "Delete a card and all its associated data",
 			Func:        deleteCmd,
@@ -238,6 +248,17 @@ func helpCmd(args []string) error {
 					fmt.Println("1. Confirm you want to delete the card (unless --quiet is specified)")
 					fmt.Println("2. Delete object files from Minio storage (images and markdown)")
 					fmt.Println("3. Delete the card from the database (related data is cascade deleted)")
+				case "show":
+					fmt.Println("Usage: ume show [options] <card_id>")
+					fmt.Println("\nShow a card's image and markdown content in the browser.")
+					fmt.Println("\nOptions:")
+					fmt.Println("  -v, --version   Version number of markdown to display (default: latest)")
+					fmt.Println("  -l, --lang      Translate markdown to specified language")
+					fmt.Println("\nThis command will:")
+					fmt.Println("1. Retrieve the image and markdown content for the specified card")
+					fmt.Println("2. If --lang is specified, translate the markdown to the target language")
+					fmt.Println("3. Generate an HTML page with both the image and formatted markdown")
+					fmt.Println("4. Open the HTML page in your default browser")
 				}
 				return nil
 			}

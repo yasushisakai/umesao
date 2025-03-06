@@ -11,18 +11,18 @@ import (
 	"os"
 )
 
-func AzureOCRRequest(endpoint, key, path, language string) (string, error) {
+func AzureOCRRequest(endpoint, key, path string) (string, error) {
+	return AzureOCRRequestWithLanguage(endpoint, key, path, "ja")
+}
+
+// AzureOCRRequestWithLanguage sends an OCR request to Azure with a specified language
+func AzureOCRRequestWithLanguage(endpoint, key, path, language string) (string, error) {
 	// Retrieve the Azure subscription key from the environment variable.
 
 	// Read the image file into memory.
 	fileData, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("Failed to read image file: %v", err)
-	}
-
-	// Set default language to Japanese if not specified
-	if language == "" {
-		language = "ja"
 	}
 
 	// Define the URL with the query parameter.

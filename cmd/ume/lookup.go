@@ -106,6 +106,10 @@ func lookupImpl(searchQuery string) error {
 		return results[i].Distance < results[j].Distance
 	})
 
+	if err != nil {
+		return fmt.Errorf("error initializing Minio client: %v", err)
+	}
+
 	// Display the results
 	fmt.Println("\nResults:")
 	fmt.Println("\nCard\tVer\tDist\tText")
