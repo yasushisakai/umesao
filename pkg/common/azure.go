@@ -9,15 +9,56 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
+
+	_ "github.com/joho/godotenv/autoload"
 )
 
-func AzureOCRRequest(endpoint, key, path string) (string, error) {
-	return AzureOCRRequestWithLanguage(endpoint, key, path, "ja")
+func AzureOCR(filePath, language string) (string, error) {
+
+	azureEndpoint, err := RequireEnvVar("AZURE_ENDPOINT")
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to get Azure endpoint: %v", err)
+	}
+
+	azureKey, err := RequireEnvVar("AZURE_KEY")
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to get Azure key: %v", err)
+	}
+
+	// Send OCR request to Azure with the specified language
+	location, err := AzureOCRRequestWithLanguage(azureEndpoint, azureKey, filePath, language)
+	if err != nil {
+		return "", fmt.Errorf("error sending OCR request: %v", err)
+	}
+
+	// Fetch OCR result
+	var ocrResult string
+	attempt := 3
+
+	for {
+		time.Sleep(3 * time.Second)
+		ocrResult, err = AzureOCRFetchResult(azureKey, location)
+		if err != nil && attempt > 0 {
+			fmt.Printf("OCR fetch did not succeed: %s\nRetrying in 3 seconds...\n", err)
+			attempt = attempt - 1
+		} else {
+			break
+		}
+	}
+
+	if attempt < 0 {
+		return "", fmt.Errorf("too many failed OCR fetch attempts")
+	}
+
+	return ocrResult, nil
+
 }
 
 // AzureOCRRequestWithLanguage sends an OCR request to Azure with a specified language
 func AzureOCRRequestWithLanguage(endpoint, key, path, language string) (string, error) {
-	// Retrieve the Azure subscription key from the environment variable.
 
 	// Read the image file into memory.
 	fileData, err := os.ReadFile(path)
@@ -55,7 +96,7 @@ func AzureOCRRequestWithLanguage(endpoint, key, path, language string) (string, 
 	return operationLocation, nil
 }
 
-func AzureOCRFetchResult(location, key string) (string, error) {
+func AzureOCRFetchResult(key, location string) (string, error) {
 
 	req, err := http.NewRequest("GET", location, bytes.NewBufferString(""))
 

@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/nfnt/resize"
 	"github.com/pgvector/pgvector-go"
@@ -59,7 +58,8 @@ type OpenAIResponse struct {
 }
 
 // uploadImpl implements the upload command functionality
-func uploadImpl(filePath string, method string, language string) error {
+// func uploadImpl(filePath string, method string, language string) error {
+func uploadImpl(filePath, method, language string) error {
 	// Check if the file exists and is readable
 	_, err := os.Stat(filePath)
 	if err != nil {
@@ -117,7 +117,7 @@ func uploadImpl(filePath string, method string, language string) error {
 	// Extract text from the image based on the method
 	var content string
 	if method == "ocr" {
-		content, err = processWithOCR(filePath, openaiKey, language)
+		content, err = processWithOCR(filePath, language)
 	} else {
 		content, err = processWithVision(filePath, openaiKey)
 	}
@@ -195,44 +195,21 @@ func uploadImpl(filePath string, method string, language string) error {
 }
 
 // processWithOCR extracts text from an image using Azure OCR
-func processWithOCR(filePath string, openaiKey string, language string) (string, error) {
-	// Get environment variables
-	azureEndpoint, err := common.RequireEnvVar("AZURE_ENDPOINT")
+func processWithOCR(filePath, language string) (string, error) {
+
+	ocrResult, err := common.AzureOCR(filePath, language)
+
 	if err != nil {
-		return "", fmt.Errorf("error getting Azure endpoint: %v", err)
-	}
-
-	azureKey, err := common.RequireEnvVar("AZURE_KEY")
-	if err != nil {
-		return "", fmt.Errorf("error getting Azure key: %v", err)
-	}
-
-	// Send OCR request to Azure with the specified language
-	location, err := common.AzureOCRRequestWithLanguage(azureEndpoint, azureKey, filePath, language)
-	if err != nil {
-		return "", fmt.Errorf("error sending OCR request: %v", err)
-	}
-
-	// Fetch OCR result
-	var ocrResult string
-	attempt := 3
-
-	for {
-		time.Sleep(3 * time.Second)
-		ocrResult, err = common.AzureOCRFetchResult(location, azureKey)
-		if err != nil && attempt > 0 {
-			fmt.Printf("OCR fetch did not succeed: %s\nRetrying in 3 seconds...\n", err)
-			attempt = attempt - 1
-		} else {
-			break
-		}
-	}
-
-	if attempt < 0 {
-		return "", fmt.Errorf("too many failed OCR fetch attempts")
+		return "", fmt.Errorf("error processing image with Azure OCR: %v", err)
 	}
 
 	fmt.Println("Successfully fetched OCR result")
+
+	openaiKey, err := common.RequireEnvVar("OPENAI_KEY")
+
+	if err != nil {
+		return "", fmt.Errorf("error getting OpenAI key: %v", err)
+	}
 
 	// Convert OCR result to markdown
 	md, err := common.Ocr2md(openaiKey, "o1-mini", ocrResult)
