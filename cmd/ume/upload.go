@@ -116,9 +116,12 @@ func uploadImpl(filePath, method, language string) error {
 
 	// Extract text from the image based on the method
 	var content string
-	if method == "ocr" {
+	switch method {
+	case "ocr":
 		content, err = processWithOCR(filePath, language)
-	} else {
+	case "mistral":
+		content, err = processWithMistral(filePath, openaiKey)
+	default:
 		content, err = processWithVision(filePath, openaiKey)
 	}
 
@@ -215,6 +218,25 @@ func processWithOCR(filePath, language string) (string, error) {
 	md, err := common.Ocr2md(openaiKey, "o1-mini", ocrResult)
 	if err != nil {
 		return "", fmt.Errorf("error creating markdown from OCR result: %v", err)
+	}
+
+	return md, nil
+}
+
+// processWithMistral extracts text from an image using Mistral's OCR API
+func processWithMistral(filePath string, openaiKey string) (string, error) {
+	// Use Mistral OCR to extract text from the image
+	ocrResult, err := common.MistralOCR(filePath)
+	if err != nil {
+		return "", fmt.Errorf("error processing image with Mistral OCR: %v", err)
+	}
+
+	fmt.Println("Successfully fetched Mistral OCR result")
+
+	// Convert OCR result to markdown using OpenAI
+	md, err := common.Ocr2md(openaiKey, "o1-mini", ocrResult)
+	if err != nil {
+		return "", fmt.Errorf("error creating markdown from Mistral OCR result: %v", err)
 	}
 
 	return md, nil

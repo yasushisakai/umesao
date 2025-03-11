@@ -86,17 +86,18 @@ func main() {
 			fmt.Println("4. Offer to display an image for a selected card")
 			return
 		case "upload":
-			fmt.Println("Usage: ume upload [--method=ocr|vision] [-l=language] <image_file>")
+			fmt.Println("Usage: ume upload [--method=mistral|ocr|vision] [-l=language] <image_file>")
 			fmt.Println("\nUpload an image file, extract text, and store the results in the database.")
 			fmt.Println("\nOptions:")
-			fmt.Println("  --method=ocr     Use Azure OCR service (default)")
-			fmt.Println("  --method=vision  Use OpenAI's Vision API")
-			fmt.Println("  -l, --lang       Language for OCR recognition (default: ja)")
-			fmt.Println("                   Examples: en, de, fr, es, zh, ja")
-			fmt.Println("                   Full list: https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/language-support#optical-character-recognition-ocr")
+			fmt.Println("  --method=ocr      Use Azure OCR service(default)")
+			fmt.Println("  --method=mistral  Use Mistral OCR service")
+			fmt.Println("  --method=vision   Use OpenAI's Vision API")
+			fmt.Println("  -l, --lang        Language for OCR recognition (default: ja) - only applies to OCR method")
+			fmt.Println("                    Examples: en, de, fr, es, zh, ja")
+			fmt.Println("                    Full list: https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/language-support#optical-character-recognition-ocr")
 			fmt.Println("\nThis command will:")
 			fmt.Println("1. Upload the image to storage")
-			fmt.Println("2. Extract text using the specified method (OCR or Vision)")
+			fmt.Println("2. Extract text using the specified method (Mistral, OCR, or Vision)")
 			fmt.Println("3. Convert the result to markdown")
 			fmt.Println("4. Generate embeddings for the markdown content")
 			fmt.Println("5. Store everything in the database")
@@ -215,17 +216,18 @@ func helpCmd(args []string) error {
 					fmt.Println("3. Display the top matching cards")
 					fmt.Println("4. Offer to display an image for a selected card")
 				case "upload":
-					fmt.Println("Usage: ume upload [--method=ocr|vision] [-l=language] <image_file>")
+					fmt.Println("Usage: ume upload [--method=mistral|ocr|vision] [-l=language] <image_file>")
 					fmt.Println("\nUpload an image file, extract text, and store the results in the database.")
 					fmt.Println("\nOptions:")
-					fmt.Println("  --method=ocr     Use Azure OCR service (default)")
-					fmt.Println("  --method=vision  Use OpenAI's Vision API")
-					fmt.Println("  -l, --lang       Language for OCR recognition (default: ja)")
-					fmt.Println("                   Examples: en, de, fr, es, zh, ja")
-					fmt.Println("                   Full list: https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/language-support#optical-character-recognition-ocr")
+					fmt.Println("  --method=mistral  Use Mistral OCR service (default)")
+					fmt.Println("  --method=ocr      Use Azure OCR service")
+					fmt.Println("  --method=vision   Use OpenAI's Vision API")
+					fmt.Println("  -l, --lang        Language for OCR recognition (default: ja) - only applies to OCR method")
+					fmt.Println("                    Examples: en, de, fr, es, zh, ja")
+					fmt.Println("                    Full list: https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/language-support#optical-character-recognition-ocr")
 					fmt.Println("\nThis command will:")
 					fmt.Println("1. Upload the image to storage")
-					fmt.Println("2. Extract text using the specified method (OCR or Vision)")
+					fmt.Println("2. Extract text using the specified method (Mistral, OCR, or Vision)")
 					fmt.Println("3. Convert the result to markdown")
 					fmt.Println("4. Generate embeddings for the markdown content")
 					fmt.Println("5. Store everything in the database")
@@ -313,12 +315,12 @@ func lookupCmd(args []string) error {
 // uploadCmd handles the upload command
 func uploadCmd(args []string) error {
 	if len(args) < 2 {
-		return fmt.Errorf("usage: ume upload [--method=ocr|vision] [-l=language] <image_file>")
+		return fmt.Errorf("usage: ume upload [--method=mistral|ocr|vision] [-l=language] <image_file>")
 	}
 
 	// Specify upload flags
 	uploadFlags := flag.NewFlagSet("upload", flag.ExitOnError)
-	methodFlag := uploadFlags.String("method", "ocr", "Method to use for text extraction: ocr (default) or vision")
+	methodFlag := uploadFlags.String("method", "ocr", "Method to use for text extraction: ocr (default), mistral, or vision")
 	langShortFlag := uploadFlags.String("l", "ja", "Language for OCR (default: ja)")
 	langLongFlag := uploadFlags.String("lang", "ja", "Language for OCR (default: ja). See supported languages at https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/language-support#optical-character-recognition-ocr")
 
@@ -344,14 +346,20 @@ func uploadCmd(args []string) error {
 
 	// Validate method flag
 	method := *methodFlag
-	if method != "ocr" && method != "vision" {
-		return fmt.Errorf("invalid method: %s. Must be either 'ocr' or 'vision'", method)
+	if method != "ocr" && method != "vision" && method != "mistral" {
+		return fmt.Errorf("invalid method: %s. Must be one of 'mistral', 'ocr', or 'vision'", method)
 	}
 
 	// Determine which language flag to use (prefer short flag if both are set to non-default)
-	language := *langShortFlag
-	if *langShortFlag == "ja" && *langLongFlag != "ja" {
-		language = *langLongFlag
+	// The language option is only relevant for the OCR method
+	language := ""
+	if method == "ocr" {
+		language = *langShortFlag
+		if *langShortFlag == "ja" && *langLongFlag != "ja" {
+			language = *langLongFlag
+		}
+	} else if *langShortFlag != "ja" || *langLongFlag != "ja" {
+		fmt.Println("Note: The language option is only used with the OCR method and will be ignored.")
 	}
 
 	// Implement the upload functionality with the specified method and language
@@ -429,3 +437,4 @@ func editCmd(args []string) error {
 // - upload.go: uploadImpl
 // - edit.go:   editImpl
 // - delete.go: deleteImpl
+
